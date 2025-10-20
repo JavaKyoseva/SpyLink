@@ -23,7 +23,7 @@ pkg install unzip -y
 git clone https://github.com/JavaKyoseva/SpyLink
 #Unzip zip file
 cd SpyLink
-unzip main.zip
+unzip main
 ```
 ## 🔥 Firebase Setup
 
@@ -46,6 +46,7 @@ const db = firebase.database();
 
 ```bash
 # start localhost
+cd spylink
 npx http-server . -p 3000
 # Open http://localhost:3000
 ```
