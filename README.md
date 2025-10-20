@@ -1,4 +1,4 @@
-# 🕵️‍♂️ SpyLink — Demo Link Generator 🌐
+# 🕵️‍♂️ SpyLink — Link Generator 🌐
 
 **Description**  
 SpyLink is a demo tool that generates unique links which, upon user consent, request browser permissions such as camera and location. The collected data is stored securely on the site for educational, testing, or authorized research purposes.  
