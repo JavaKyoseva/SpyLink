@@ -14,7 +14,7 @@ SpyLink is a demo tool that generates unique links which, upon user consent, req
 ---
 
 ## 🚀 Quick Installation & Run
-```bash
+```terminal
 #Install dependencies
 pkg install git -y
 pkg install nodejs -y
@@ -44,16 +44,16 @@ git clone https://github.com/JavaKyoseva/SpyLink
 
 5. Parameter.html file configuration
   
-5.1 Open Telegram and search for @BotFather
+  5.1 Open Telegram and search for @BotFather
+   
+   Get a new bot token
 
-5.2 Get a new bot token
+  5.2 Write @chat_id and search
+    
+   Get a your chat id
 
-5.3 Write @chat_id and search
-
-5.4 Get a your chat id
-
-5.5 Edit the Parameter.html file
-```html
+  5.3 Edit the Parameter.html file
+```js
   const encodedKey = encodeURIComponent(key);
   const botToken = 'Your-Bot-Token';
   const chatId = 'Your-Chat-Id';
