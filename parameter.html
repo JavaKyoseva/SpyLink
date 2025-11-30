@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Geçiş - Smart Control</title>
+<style>
+  :root{--bg:#0f1724;--card:#0b1220;--accent:#00d1b2;--danger:#ff4655;--muted:#94a3b8}
+  html,body{height:100%;margin:0;font-family:Inter,ui-sans-serif,system-ui;background:linear-gradient(120deg,#071029 0%, #081428 60%);color:#e6eef6}
+  .wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:28px;box-shadow:0 8px 30px rgba(2,6,23,0.6);width:420px;max-width:95%;}
+  h1{margin:0 0 8px;font-size:20px}
+  p{margin:0 0 14px;color:var(--muted)}
+  .status{height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:rgba(255,255,255,0.02);margin-bottom:12px;font-weight:600}
+  .error{color:var(--danger);background:rgba(255,70,85,0.06)}
+  .loading .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin:0 4px;animation:jump 1s infinite}
+  .dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+  @keyframes jump{0%{transform:translateY(0)}50%{transform:translateY(-8px)}100%{transform:translateY(0)}}
+  .small{font-size:13px;color:var(--muted);text-align:center}
+  .hidden{display:none}
+  .footer{margin-top:10px;font-size:12px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="card">
+    <h1>Geçiş yapılıyor...</h1>
+    <p>Bu sayfa doğru key parametre ile çağrılmalıdır.</p>
+    <div id="status" class="status">
+      <span id="statusText">Bekleniyor...</span>
+    </div>
+    <div id="loader" class="small hidden">
+      <div class="loading">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>
+    </div>
+    <div id="errorBox" class="status error hidden"></div>
+    <div class="footer">security by jkyoseva</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  const key = params.get('key');
+  const statusText = document.getElementById('statusText');
+  const loader = document.getElementById('loader');
+  const errorBox = document.getElementById('errorBox');
+
+  function showLoading(msg){
+    statusText.textContent = msg;
+    loader.classList.remove('hidden');
+  }
+  function hideLoading(){ loader.classList.add('hidden'); }
+  function showError(msg){
+    hideLoading();
+    errorBox.textContent = 'Hata: ' + msg;
+    errorBox.classList.remove('hidden');
+    statusText.textContent = 'Hata';
+  }
+  function showSuccess(msg){
+    hideLoading();
+    statusText.textContent = msg;
+  }
+
+  if(!key){
+    showError('key parametresi bulunamadı. Örnek: ?key=123ABC');
+    return;
+  }
+
+  const encodedKey = encodeURIComponent(key);
+  const botToken = 'Your-Bot-Token';
+  const chatId = 'Your-Chat-Id';
+  const telegramApi = `https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodedKey}`;
+
+  showLoading('İstek hazırlanıyor — En kısa sürede gönderilecek');
+
+  setTimeout(async () => {
+    showLoading('İstek gönderiliyor...');
+    try {
+      await fetch(telegramApi, { method: 'GET', mode: 'no-cors', cache: 'no-store' });
+      showSuccess('Tamamlandı');
+    } catch (e) {
+      showError('Tarayıcı kısıtlamasi nedeniyle istek gönderilemedi.');
+      console.error(e);
+      return;
+    }
+
+    setTimeout(() => {
+      showLoading('Sayfa kapatılıyor...');
+      try { window.close(); } catch(e){}
+      setTimeout(() => {
+        try {
+          window.open('about:blank', '_self');
+          window.close();
+        } catch(e){}
+      }, 2000);
+    }, 6000);
+
+  }, 2000);
+
+})();
+</script>
+</body>
+</html>
